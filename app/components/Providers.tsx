@@ -1,17 +1,23 @@
 'use client';
 
-import { OnchainKitProvider } from '@coinbase/onchainkit';
+import { OnchainKitProvider } from '@coinbase/onchainkit'; 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; 
 import { useState, ReactNode } from 'react';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
+import { coinbaseWallet } from 'wagmi/connectors';
 
-// Configuración básica para Base Sepolia (Testnet)
 const config = createConfig({
   chains: [baseSepolia],
+  connectors: [
+    coinbaseWallet({
+      appName: 'K-Bit Idols',
+    }),
+  ],
   transports: {
-    [baseSepolia.id]: http(), // Usa el transporte público por defecto
+    [baseSepolia.id]: http(),
   },
+  ssr: true, 
 });
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -21,7 +27,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <OnchainKitProvider
-          apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
+          apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY || ""}          
           chain={baseSepolia}
         >
           {children}
@@ -30,3 +36,4 @@ export function Providers({ children }: { children: ReactNode }) {
     </WagmiProvider>
   );
 }
+

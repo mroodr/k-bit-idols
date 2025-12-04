@@ -55,9 +55,10 @@ export async function POST(req: Request) {
 
     // Replicate a veces devuelve array o string, normalizamos:
     const finalImage = Array.isArray(imageOutput) ? imageOutput[0] : imageOutput;
+    const finalMusic = Array.isArray(musicOutput) ? musicOutput[0] : musicOutput;
 
     return NextResponse.json({ 
-      musicUrl: musicOutput, 
+      musicUrl: finalMusic, 
       imageUrl: finalImage 
     });
 

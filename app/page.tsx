@@ -1,3 +1,5 @@
+"use client";
+
 import { 
   ConnectWallet, 
   Wallet, 
@@ -12,10 +14,16 @@ import {
   EthBalance 
 } from '@coinbase/onchainkit/identity';
 
-"use client";
 import { useState, useRef } from "react";
-// CORRECCIÓN AQUÍ: Quité "Wallet" de esta lista para que no choque
-import { Sparkles, Play, Pause, Zap, Music, Disc } from "lucide-react";
+import { Sparkles, Play, Pause, Zap, Music, Disc, Loader2 } from "lucide-react";
+import { useSendTransaction, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { parseEther } from 'viem';
+import { baseSepolia } from 'wagmi/chains';
+
+// Dirección del contrato/treasury para recibir pagos (Base Sepolia)
+// NOTA: Cambia esto por tu dirección de wallet o contrato real
+const MINT_RECIPIENT = process.env.NEXT_PUBLIC_MINT_RECIPIENT || '0x0000000000000000000000000000000000000000';
+const MINT_AMOUNT = '0.0001'; // ETH
 
 export default function Home() {
   // --- ESTADOS (Memoria de la App) ---
@@ -29,6 +37,20 @@ export default function Home() {
   // Referencia al reproductor de audio oculto
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // --- Web3 Hooks (Wagmi) ---
+  const { address, isConnected } = useAccount();
+  
+  const {
+    data: hash,
+    isPending: isPendingTransaction,
+    sendTransaction,
+    error: sendError,
+  } = useSendTransaction();
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
+
   // --- 1. CONECTAR CON EL ASISTENTE (Chat) ---
   const handleConsultarIA = async () => {
     if (!userInput) return;
@@ -38,14 +60,25 @@ export default function Home() {
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ message: userInput }),
       });
+
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}: ${res.statusText}`);
+      }
+
       const data = await res.json();
-      setChatResponse(data.result);
+      setChatResponse(data.result || data.error || 'Sin respuesta');
     } catch (e) {
-      alert("Error conectando con el Producer AI");
+      const errorMessage = e instanceof Error ? e.message : 'Error desconocido';
+      alert(`Error conectando con el Producer AI: ${errorMessage}`);
+      console.error('Error detallado:', e);
+    } finally {
+      setIsConsulting(false);
     }
-    setIsConsulting(false);
   };
 
   // --- 2. GENERAR CONTENIDO (Música + Imagen) ---
@@ -54,14 +87,25 @@ export default function Home() {
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ prompt: userInput }),
       });
+
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}: ${res.statusText}`);
+      }
+
       const data = await res.json();
       setGeneratedContent({ image: data.imageUrl, audio: data.musicUrl });
     } catch (e) {
-      alert("Error generando los assets");
+      const errorMessage = e instanceof Error ? e.message : 'Error desconocido';
+      alert(`Error generando los assets: ${errorMessage}`);
+      console.error('Error detallado:', e);
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
 
   // --- CONTROL DE AUDIO ---
@@ -73,6 +117,25 @@ export default function Home() {
         audioRef.current.play();
       }
       setIsPlaying(!isPlaying);
+    }
+  };
+
+  // --- 3. MINTeAR NFT (Transacción Real) ---
+  const handleMint = async () => {
+    if (!isConnected) {
+      alert('Por favor, conecta tu wallet primero');
+      return;
+    }
+
+    try {
+      sendTransaction({
+        to: MINT_RECIPIENT as `0x${string}`,
+        value: parseEther(MINT_AMOUNT),
+        chainId: baseSepolia.id,
+      });
+    } catch (error) {
+      console.error('Error al enviar transacción:', error);
+      alert('Error al iniciar la transacción. Por favor, intenta de nuevo.');
     }
   };
 
@@ -225,16 +288,48 @@ export default function Home() {
             </div>
         )}
 
-        {/* --- PASO 3: CTA DE PAGO (Falso) --- */}
+        {/* --- PASO 3: MINT NFT (Transacción Real) --- */}
         {generatedContent && (
              <div className="text-center py-8 opacity-60 hover:opacity-100 transition-opacity">
                 <p className="text-gray-500 mb-4 text-xs tracking-widest uppercase">
-                    ¿Te gusta tu Idol? Adquiérelo para siempre en Base
+                    ¿Te gusta tu Idol? Adquiérelo para siempre en Base Sepolia
                 </p>
-                <button className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 mx-auto shadow-lg shadow-blue-900/50 transition-all transform hover:scale-105">
-                   <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" className="w-5 h-5" alt="USDC"/>
-                   MINT FULL VERSION (1 USDC)
-                </button>
+                
+                {isConfirmed ? (
+                  <div className="bg-green-600 text-white px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 mx-auto shadow-lg shadow-green-900/50">
+                    ✅ MINT EXITOSO! Hash: {hash?.slice(0, 10)}...
+                  </div>
+                ) : (
+                  <button 
+                    onClick={handleMint}
+                    disabled={!isConnected || isPendingTransaction || isConfirming}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 mx-auto shadow-lg shadow-blue-900/50 transition-all transform hover:scale-105"
+                  >
+                    {isPendingTransaction || isConfirming ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        {isPendingTransaction ? 'ENVIANDO...' : 'CONFIRMANDO...'}
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-5 h-5" />
+                        MINT FULL VERSION ({MINT_AMOUNT} ETH)
+                      </>
+                    )}
+                  </button>
+                )}
+                
+                {sendError && (
+                  <p className="text-red-400 text-xs mt-2">
+                    Error: {sendError.message}
+                  </p>
+                )}
+                
+                {!isConnected && (
+                  <p className="text-yellow-400 text-xs mt-2">
+                    ⚠️ Conecta tu wallet para continuar
+                  </p>
+                )}
              </div>
         )}
 
