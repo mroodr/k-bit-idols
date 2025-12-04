@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+// 1. IMPORTANTE: globals.css debe ir PRIMERO para inicializar Tailwind
 import "./globals.css";
+
+
+
+// 3. Finalmente los providers
+import { Providers } from "./providers"; 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +34,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

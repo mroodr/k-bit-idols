@@ -5,6 +5,23 @@
 :root {
   --background: #ffffff;
   --foreground: #000000;
+  
+  /* --- VARIABLES PARA LA WALLET (ONCHAINKIT) --- */
+  /* Estas variables aseguran que la wallet se vea bien sin importar el CSS externo */
+  --ock-font-family: inherit;
+  --ock-border-radius: 12px;
+  --ock-bg-default: #ffffff;
+  --ock-text-primary: #000000;
+  --ock-text-secondary: #6b7280;
+}
+
+/* Modo oscuro automático para la wallet */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ock-bg-default: #1E1E1E; /* Fondo oscuro para la wallet */
+    --ock-text-primary: #ffffff;
+    --ock-text-secondary: #9ca3af;
+  }
 }
 
 * {
@@ -16,6 +33,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
+  /* Tu configuración de fuentes original */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -25,6 +43,8 @@ body {
 html, body {
   height: 100%;
 }
+
+/* --- TUS ESTILOS PERSONALIZADOS --- */
 
 /* Scrollbar personalizado estilo Apple Music */
 ::-webkit-scrollbar {
