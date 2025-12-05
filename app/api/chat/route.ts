@@ -47,7 +47,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ result: completion.choices[0].message.content });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Error en OpenAI' }, { status: 500 });
+    console.error('OpenAI error:', error);
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: `Error en OpenAI: ${message}` }, { status: 500 });
   }
 }

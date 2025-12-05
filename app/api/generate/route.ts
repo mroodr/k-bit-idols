@@ -63,7 +63,8 @@ export async function POST(req: Request) {
     });
 
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Error en Replicate' }, { status: 500 });
+    console.error('Replicate error:', error);
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: `Error en Replicate: ${message}` }, { status: 500 });
   }
 }

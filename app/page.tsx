@@ -110,7 +110,7 @@ export default function Home() {
       alert(`Error conectando con el Producer AI: ${errorMessage}`);
       console.error('Error detallado:', e);
     } finally {
-    setIsConsulting(false);
+      setIsConsulting(false);
     }
   };
 
@@ -137,7 +137,7 @@ export default function Home() {
       alert(`Error generando los assets: ${errorMessage}`);
       console.error('Error detallado:', e);
     } finally {
-    setIsGenerating(false);
+      setIsGenerating(false);
     }
   };
 
